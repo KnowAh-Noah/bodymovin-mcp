@@ -5,6 +5,30 @@
   <title>Bodymovin Control</title>
   <script src="../CSInterface.js"></script>
   <script src="./helper.js"></script>
+  <script>
+    /*
+     * Start the MCP server (control/mcp/). A hidden extension has no visible
+     * console, so boot progress and failures go to
+     * $TMPDIR/bodymovin-mcp/boot.log.
+     */
+    (function () {
+      var fs = require('fs'), os = require('os'), path = require('path');
+      function note(msg) {
+        try {
+          var dir = path.join(os.tmpdir(), 'bodymovin-mcp');
+          fs.mkdirSync(dir, { recursive: true });
+          fs.appendFileSync(path.join(dir, 'boot.log'), new Date().toISOString() + ' ' + msg + '\n');
+        } catch (e) { /* nothing left to report with */ }
+      }
+      try {
+        var root = path.dirname(require('url').fileURLToPath(window.location.href.split(/[?#]/)[0]));
+        note('boot: node ' + process.version + ', ' + root);
+        require(path.join(root, 'mcp', 'server.js')).start(note);
+      } catch (err) {
+        note('BOOT FAILED: ' + (err && err.stack ? err.stack : err));
+      }
+    })();
+  </script>
 </head>
 <body></body>
 </html>

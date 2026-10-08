@@ -74,12 +74,16 @@
 				</UI>
 			</DispatchInfo>
 		</Extension>
-		<!-- Hidden helper. Opens and restarts the Bodymovin panel on request from scripts. See control/helper.js. -->
+		<!-- Hidden helper. Opens and restarts the Bodymovin panel on request from scripts, and hosts the MCP server (control/mcp/). See control/helper.js. -->
 		<Extension Id="com.bodymovin.control">
 			<DispatchInfo>
 				<Resources>
 					<MainPath>./control/helper.html</MainPath>
 					<ScriptPath>./control/helper.jsx</ScriptPath>
+					<CEFCommandLine>
+						<Parameter>--enable-nodejs</Parameter>
+						<Parameter>--mixed-context</Parameter>
+					</CEFCommandLine>
 				</Resources>
 				<Lifecycle>
 					<AutoVisible>false</AutoVisible>

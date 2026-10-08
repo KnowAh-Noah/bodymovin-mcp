@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install this fork as "Bodymovin Scriptable", next to the official Bodymovin.
+"""Install this fork as "Bodymovin MCP", next to the official Bodymovin.
 
 The panel's React build needs 2017-era Node tooling, so the fork does not
 rebuild it. The official installed build is the base: it is read, never
@@ -8,10 +8,10 @@ ExtendScript, control/ files and manifest on top, then gives the copy its own
 identity so the two can be installed and open at the same time:
 
   - extension ids, menu name and debug ports
-  - the ExtendScript namespace ($.__bodymovin -> $.__bodymovinScriptable).
+  - the ExtendScript namespace ($.__bodymovin -> $.__bodymovinMCP).
     Both panels share After Effects' one script engine, so with one name the
     second panel to load would replace the first one's code.
-  - the event names (bm: -> bms:). Both panels hear every event, so with one
+  - the event names (bm: -> bmcp:). Both panels hear every event, so with one
     set each would answer the other's export.
   - the panel's local image/audio server port, and its temp folder
 
@@ -19,29 +19,29 @@ The source keeps upstream's names so it still merges cleanly; all renaming
 happens here. Quit After Effects before running - new extensions only
 register on launch.
 
-    python3 scripts/install-scriptable.py
+    python3 scripts/install.py
 """
 import os
 import re
 import shutil
 import sys
 
-NAME = 'Bodymovin Scriptable'
-BUNDLE_ID = 'com.bodymovin.scriptable'
+NAME = 'Bodymovin MCP'
+BUNDLE_ID = 'com.bodymovin.mcp'
 PANEL_ID = BUNDLE_ID + '.panel'
 CONTROL_ID = BUNDLE_ID + '.control'
-NAMESPACE = '__bodymovinScriptable'
-EVENT_PREFIX = 'bms:'
+NAMESPACE = '__bodymovinMCP'
+EVENT_PREFIX = 'bmcp:'
 SERVER_PORT = '24802'          # official: 24801
 DEBUG_PORTS = ('8492', '8493')  # panel, control
-TEMP_FOLDER = 'BodymovinScriptable'
+TEMP_FOLDER = 'BodymovinMCP'
 VERSION = '5.12.1'             # the Lottie's "v" - must stay the official version
 
 EXTENSIONS = '/Library/Application Support/Adobe/CEP/extensions'
 BASE = os.environ.get('BODYMOVIN_BASE', os.path.join(EXTENSIONS, 'bodymovin'))
 # The per-user folder, so installing needs no admin rights.
 USER_EXTENSIONS = os.path.expanduser('~/Library/Application Support/Adobe/CEP/extensions')
-TARGET = os.environ.get('BODYMOVIN_TARGET', os.path.join(USER_EXTENSIONS, 'bodymovin-scriptable'))
+TARGET = os.environ.get('BODYMOVIN_TARGET', os.path.join(USER_EXTENSIONS, 'bodymovin-mcp'))
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
