@@ -75,8 +75,7 @@ one is refused rather than ignored:
   "fileName": "main",
   "settings": {
     "original_names": true,
-    "original_assets": true,
-    "audio": { "bitrate": "__bodymovin_sound_template_32" }
+    "original_assets": true
   }
 }
 ```
@@ -87,7 +86,7 @@ This writes `main.json`, with images and audio in `images/` beside it.
 |---|---|
 | Original Asset Names | `original_names` |
 | Copy Original Assets | `original_assets` |
-| Audio bitrate | `audio.bitrate` |
+| Audio bitrate | `audio.bitrate` (`__bodymovin_sound_template_16` ... `_32`) |
 
 ## Presets
 

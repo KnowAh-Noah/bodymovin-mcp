@@ -144,7 +144,11 @@ $.__bodymovin.bm_scriptExport = (function () {
             }
             var fileName = (args.fileName || 'data').replace(/\.json$/, '');
             var file = new File(folder.fsName + '/' + fileName + '.json');
-            var settings = merge(defaults(), args.settings || {});
+            // The panel sizes the banner settings to the comp when it first lists it.
+            var base = defaults();
+            base.banner.width = base.banner.original_width = comp.width;
+            base.banner.height = base.banner.original_height = comp.height;
+            var settings = merge(base, args.settings || {});
             var compositionData = {
                 id: comp.id,
                 uid: 'script-' + comp.id + '-' + new Date().getTime(),
