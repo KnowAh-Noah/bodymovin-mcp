@@ -23,7 +23,14 @@
       try {
         var root = path.dirname(require('url').fileURLToPath(window.location.href.split(/[?#]/)[0]));
         note('boot: node ' + process.version + ', ' + root);
-        require(path.join(root, 'mcp', 'server.js')).start(note);
+        var mcp = require(path.join(root, 'mcp', 'server.js'));
+        var server = mcp.start(note, window.__adobe_cep__);
+        // A reload leaves this page's Node context alive and holding the port,
+        // so release it on the way out.
+        window.addEventListener('beforeunload', function () {
+          mcp.stop(server);
+          note('stopped for unload');
+        });
       } catch (err) {
         note('BOOT FAILED: ' + (err && err.stack ? err.stack : err));
       }

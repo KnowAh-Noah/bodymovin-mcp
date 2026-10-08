@@ -8,16 +8,25 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const presets = require('./presets.js');
 
 const READY_TIMEOUT_MS = 30000;
 const POLL_MS = 500;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// The helper page's window.__adobe_cep__, set by server.start().
+let cep = null;
+const setHost = (host) => { cep = host; };
+
 function evalHost(script, timeoutMs = 20000) {
   return new Promise((resolve, reject) => {
+    if (!cep) {
+      reject(new Error('Not connected to After Effects'));
+      return;
+    }
     const timer = setTimeout(() => reject(new Error(`After Effects did not answer within ${timeoutMs / 1000}s`)), timeoutMs);
-    window.__adobe_cep__.evalScript(script, (result) => {
+    cep.evalScript(script, (result) => {
       clearTimeout(timer);
       if (result === 'EvalScript error.') {
         reject(new Error('ExtendScript error in After Effects'));
@@ -88,6 +97,16 @@ function listOutput(jsonFile) {
   return out;
 }
 
+const getDefaults = () => hostJSON('$.__bodymovin.bm_scriptExport.defaults()');
+
+// A misspelt option would otherwise be ignored without a word, so refuse it.
+async function checkSettings(settings) {
+  const unknown = presets.unknownKeys(settings, await getDefaults());
+  if (unknown.length) {
+    throw new Error(`Not Bodymovin settings: ${unknown.join(', ')}. See bodymovin_defaults for the option names.`);
+  }
+}
+
 const tools = [
   {
     name: 'bodymovin_status',
@@ -125,15 +144,50 @@ const tools = [
     inputSchema: { type: 'object', properties: {} },
     run: async () => {
       await ensureReady();
-      return hostJSON('$.__bodymovin.bm_scriptExport.defaults()');
+      return getDefaults();
     },
+  },
+  {
+    name: 'bodymovin_list_presets',
+    description: 'The saved export presets: each one\'s name, description and settings. Presets belong to this user and live in ~/.bodymovin-mcp/presets.json.',
+    inputSchema: { type: 'object', properties: {} },
+    run: () => presets.list(),
+  },
+  {
+    name: 'bodymovin_save_preset',
+    description: 'Save a named set of export settings, to use with bodymovin_export\'s preset. Settings use Bodymovin\'s option names (see bodymovin_defaults) and are checked against them. Only list the options that differ from the defaults.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Preset name. Matched case-insensitively.' },
+        settings: { type: 'object', description: 'Bodymovin settings, e.g. {"original_names": true, "original_assets": true}.' },
+        description: { type: 'string', description: 'What the preset is for.' },
+        overwrite: { type: 'boolean', description: 'Replace an existing preset of the same name.' },
+      },
+      required: ['name', 'settings'],
+    },
+    run: async (args) => {
+      await ensureReady();
+      await checkSettings(args.settings || {});
+      return presets.put(args.name, args.settings, args.description, args.overwrite);
+    },
+  },
+  {
+    name: 'bodymovin_delete_preset',
+    description: 'Delete a saved export preset.',
+    inputSchema: {
+      type: 'object',
+      properties: { name: { type: 'string' } },
+      required: ['name'],
+    },
+    run: (args) => presets.remove(args.name),
   },
   {
     name: 'bodymovin_export',
     description: [
       'Export a composition to Lottie JSON and wait until it is written. Opens the panel if needed.',
       'Writes <folder>/<fileName>.json, with images and audio in <folder>/images/. Existing files of the same names are overwritten.',
-      'settings are deep-merged over Bodymovin\'s defaults (see bodymovin_defaults). Common ones:',
+      'preset names a saved preset (bodymovin_list_presets). settings are deep-merged over the preset, or over Bodymovin\'s defaults (see bodymovin_defaults). Common ones:',
       'original_names (Original Asset Names), original_assets (Copy Original Assets),',
       'audio: {bitrate: "__bodymovin_sound_template_16" ... "_32"}.',
     ].join(' '),
@@ -143,7 +197,8 @@ const tools = [
         comp: { type: ['string', 'number'], description: 'Composition name (unique in the project) or id.' },
         folder: { type: 'string', description: 'Absolute output folder; created if missing.' },
         fileName: { type: 'string', description: 'Output name without .json. Default "data", as Bodymovin.' },
-        settings: { type: 'object', description: 'Bodymovin settings to override.' },
+        preset: { type: 'string', description: 'A saved preset to export with.' },
+        settings: { type: 'object', description: 'Bodymovin settings to override, on top of the preset if one is given.' },
         timeoutSeconds: { type: 'number', description: 'Give up waiting after this long. Default 600.' },
       },
       required: ['comp', 'folder'],
@@ -153,7 +208,11 @@ const tools = [
       const before = await ensureReady();
       if (before.export && before.export.state === 'rendering') throw new Error('Another export is running');
 
-      const request = { comp: args.comp, folder, fileName: args.fileName || 'data', settings: args.settings || {} };
+      const preset = args.preset ? presets.get(args.preset) : null;
+      const settings = presets.merge(preset ? preset.settings : {}, args.settings || {});
+      await checkSettings(settings);
+
+      const request = { comp: args.comp, folder, fileName: args.fileName || 'data', settings };
       const started = Date.now();
       let state = await hostJSON(`$.__bodymovin.bm_scriptExport.exportComp(${literal(JSON.stringify(request))})`);
       const timeoutMs = (args.timeoutSeconds || 600) * 1000;
@@ -168,7 +227,7 @@ const tools = [
         const why = [state.message, state.alert].filter(Boolean).join(' - ');
         throw new Error(`Export failed: ${why || 'no reason given'}`);
       }
-      return { state: 'finished', comp: state.comp, seconds: (Date.now() - started) / 1000, ...listOutput(state.file) };
+      return { state: 'finished', comp: state.comp, preset: preset ? preset.name : null, seconds: (Date.now() - started) / 1000, ...listOutput(state.file) };
     },
   },
 ];
@@ -188,4 +247,5 @@ module.exports = {
   tools: tools.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })),
   callTool,
   status,
+  setHost,
 };

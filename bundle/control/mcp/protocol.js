@@ -14,6 +14,7 @@ const INSTRUCTIONS = [
   'bodymovin_export does everything: opens the panel if needed, exports, and waits until the file is written.',
   'Use bodymovin_list_comps to find comp names. Settings use the keys Bodymovin stores - see bodymovin_defaults.',
   'Common settings: original_names (Original Asset Names), original_assets (Copy Original Assets), audio.bitrate.',
+  'Check bodymovin_list_presets first: the user may have a saved preset for this kind of export.',
 ].join(' ');
 
 function rpcResult(id, result) { return { jsonrpc: '2.0', id, result }; }

@@ -60,9 +60,13 @@ installed. Tested on After Effects 2026 (26.5).
 | `bodymovin_open` | Open the Bodymovin MCP panel and wait until it can export |
 | `bodymovin_restart` | Reload the panel - the refresh for when it gets stuck |
 | `bodymovin_defaults` | Bodymovin's default export settings: every option an export can change |
+| `bodymovin_save_preset` | Save a named set of export settings |
+| `bodymovin_list_presets` | The saved presets |
+| `bodymovin_delete_preset` | Delete a preset |
 
-An export takes a comp, an output folder and, optionally, a file name and
-settings. Settings use Bodymovin's own option names:
+An export takes a comp, an output folder and, optionally, a file name, a
+preset and settings. Settings use Bodymovin's own option names, and a misspelt
+one is refused rather than ignored:
 
 ```json
 {
@@ -84,6 +88,23 @@ This writes `main.json`, with images and audio in `images/` beside it.
 | Original Asset Names | `original_names` |
 | Copy Original Assets | `original_assets` |
 | Audio bitrate | `audio.bitrate` |
+
+## Presets
+
+Save the settings you use often under a name, then export with just the name:
+
+```json
+{ "name": "Web", "settings": { "original_names": true, "original_assets": true } }
+```
+
+```json
+{ "comp": "Main", "folder": "/Users/me/Exports/Main", "preset": "Web" }
+```
+
+Settings passed with a preset override it for that one export. Presets are
+yours, not part of the extension: they are saved in
+`~/.bodymovin-mcp/presets.json` and survive reinstalls. Names are matched
+regardless of case.
 
 ## Without MCP
 

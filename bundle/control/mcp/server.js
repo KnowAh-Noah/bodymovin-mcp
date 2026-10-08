@@ -23,7 +23,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { createMcpHandler } = require('./protocol.js');
-const { tools, callTool, status } = require('./tools.js');
+const { tools, callTool, status, setHost } = require('./tools.js');
 
 const PORT = Number(process.env.BODYMOVIN_MCP_PORT) || 8793;
 const TOKEN_DIR = process.env.BODYMOVIN_MCP_TOKEN_DIR || path.join(os.homedir(), '.bodymovin-mcp');
@@ -85,7 +85,36 @@ function readBody(req, limit = 1024 * 1024) {
   });
 }
 
-function start(log) {
+/*
+ * Reloading the helper page leaves the previous page's Node context alive
+ * but frozen, still holding the port, and the new page cannot reach it. So the
+ * page stops its own server on unload (stop(), called from helper.html), and
+ * listen() retries for a few seconds in case the port is still being released.
+ */
+function stop(server) {
+  server.close();
+  for (const socket of server.__sockets) socket.destroy();
+}
+
+function listen(server, log, attempt = 1) {
+  server.once('error', (err) => {
+    if (err.code === 'EADDRINUSE' && attempt < 10) {
+      setTimeout(() => listen(server, log, attempt + 1), 500);
+    } else {
+      log(`server error: ${err.code || err.message}`);
+    }
+  });
+  server.listen(PORT, '127.0.0.1', () => {
+    server.removeAllListeners('error');
+    server.on('error', (err) => log(`server error: ${err.code || err.message}`));
+    log(`listening on 127.0.0.1:${PORT}, token in ${TOKEN_FILE}`);
+  });
+}
+
+// `cep` is the page's window.__adobe_cep__ - passed in, because after a reload
+// a global `window` may still be the previous page's.
+function start(log, cep) {
+  setHost(cep);
   const startupToken = loadOrCreateToken();
   const handleMcp = createMcpHandler({ tools, callTool });
   const allowedHosts = [`127.0.0.1:${PORT}`, `localhost:${PORT}`, `[::1]:${PORT}`];
@@ -149,9 +178,13 @@ function start(log) {
     json(res, 404, { error: 'Not found' });
   });
 
-  server.on('error', (err) => log(`server error: ${err.code || err.message}`));
-  server.listen(PORT, '127.0.0.1', () => log(`listening on 127.0.0.1:${PORT}, token in ${TOKEN_FILE}`));
+  server.__sockets = new Set();
+  server.on('connection', (socket) => {
+    server.__sockets.add(socket);
+    socket.on('close', () => server.__sockets.delete(socket));
+  });
+  listen(server, log);
   return server;
 }
 
-module.exports = { start, PORT, TOKEN_FILE };
+module.exports = { start, stop, PORT, TOKEN_FILE };
