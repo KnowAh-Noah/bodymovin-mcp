@@ -3,6 +3,7 @@
 		ExtensionBundleName="bodymovin" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<ExtensionList>
 		<Extension Id="com.bodymovin.bodymovin" Version="4.5.5" />
+		<Extension Id="com.bodymovin.control" Version="1.0.0" />
 	</ExtensionList>
 	<ExecutionEnvironment>
 		<HostList>
@@ -70,6 +71,31 @@
 						<Icon Type="DarkNormal">./icons/iconDarkNormal.png</Icon>
 						<Icon Type="DarkRollOver">./icons/iconDarkRollover.png</Icon>
 					</Icons>					
+				</UI>
+			</DispatchInfo>
+		</Extension>
+		<!-- Hidden helper. Opens and restarts the Bodymovin panel on request from scripts. See control/helper.js. -->
+		<Extension Id="com.bodymovin.control">
+			<DispatchInfo>
+				<Resources>
+					<MainPath>./control/helper.html</MainPath>
+					<ScriptPath>./control/helper.jsx</ScriptPath>
+				</Resources>
+				<Lifecycle>
+					<AutoVisible>false</AutoVisible>
+					<StartOn>
+						<Event>com.adobe.csxs.events.ApplicationActivate</Event>
+						<Event>applicationActivate</Event>
+					</StartOn>
+				</Lifecycle>
+				<UI>
+					<Type>Custom</Type>
+					<Geometry>
+						<Size>
+							<Height>1</Height>
+							<Width>1</Width>
+						</Size>
+					</Geometry>
 				</UI>
 			</DispatchInfo>
 		</Extension>

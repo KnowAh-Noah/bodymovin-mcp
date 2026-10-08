@@ -158,7 +158,8 @@ if (!Function.prototype.bm_bind) (function(){
   'utils/sourceHelper.jsx',
   'utils/shapeHelper.jsx',
   'utils/textShapeHelper.jsx',
-  'utils/transformation-matrix.jsx'
+  'utils/transformation-matrix.jsx',
+  'scriptExport.jsx'
   ]
 
   var _bmFile = new File($.fileName)

@@ -2,6 +2,8 @@
 
 Bodymovin UI extension panel
 
+> **This fork adds Bodymovin Scriptable** - open the panel and export Lotties from scripts, installed next to the official Bodymovin. See [SCRIPTABLE.md](SCRIPTABLE.md).
+
 ## Development
 
 1. Setup AE for debugging extensions ([guide](https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_9.x/Documentation/CEP%209.0%20HTML%20Extension%20Cookbook.md#debugging-unsigned-extensions))
